@@ -1,26 +1,18 @@
-import asyncio
 import time
 import logging
-
 from lcu_driver.connection import Connection
 import threading
-
 from utils import MyConnector
+import argparse
 
+logger = logging.getLogger("lol-autolockin")
 connector = MyConnector()
-logger = logging.getLogger("rogama-main")
-logger.setLevel("DEBUG")
-with open("example.log", "a+") as file:
-    file.write("\n\n\n\n" + str(time.asctime()) + "\n")
-logging.basicConfig(filename='example.log', level=logging.DEBUG)
-ch = logging.StreamHandler()
-ch.setLevel(logging.INFO)
-logger.addHandler(ch)
 
 
 def start():
     t = threading.Thread(target=connector.start)
     t.start()
+
 
 @connector.ready
 async def connect(connection: Connection):
@@ -31,7 +23,7 @@ async def connect(connection: Connection):
     summ_info = await summ_request.json()
     logger.debug(summ_info)
     acc_id = summ_info["summonerId"]
-    logger.info("Summonner id is " + str(acc_id))
+    logger.info("Summoner id is " + str(acc_id))
     while True:
         ch_select = await connection.request("get", "/lol-champ-select/v1/session")
         ch_select_info = await ch_select.json()
@@ -58,21 +50,37 @@ async def connect(connection: Connection):
                         logger.debug(timer_info)
                         current = time.time()
                         if "internalNowInEpochMs" in timer_info:
-                            remaining = (timer_info["internalNowInEpochMs"]+timer_info["adjustedTimeLeftInPhase"])/1000-current
-                            logger.info("Detected pick turn. Sleeping " + str(remaining - 0.75))
-                            time.sleep(remaining-0.75)
-                            lock_in = await connection.request("post", "/lol-champ-select/v1/session/actions/" +str(event_id)+ "/complete")
+                            remaining = (timer_info["internalNowInEpochMs"] + timer_info[
+                                "adjustedTimeLeftInPhase"]) / 1000 - current
+                            logger.info("Detected pick turn. Sleeping " + str(remaining - 1))
+                            time.sleep(remaining - 1)
+                            lock_in = await connection.request("post", "/lol-champ-select/v1/session/actions/" + str(
+                                event_id) + "/complete")
                             logger.info("Locked in.")
-                        
+        
         time.sleep(5)
 
 
 @connector.close
 async def disconnect(connection):
-    logger.info("Disconnected from League")
+    logger.info("Disconnected from League, exiting...")
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--debug", help="Enable debug log", action="store_true")
+    args = parser.parse_args()
+    logger.setLevel("DEBUG")
+    with open("example.log", "a+") as file:
+        file.write("\n\n\n\n" + str(time.asctime()) + "\n")
+    if args.debug:
+        logging.basicConfig(filename='example.log', level=logging.DEBUG)
+    else:
+        logging.basicConfig(filename='example.log', level=logging.INFO)
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.INFO)
+    logger.addHandler(ch)
+    logger.info("Waiting for League of Legends...")
     start()
 
 
