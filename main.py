@@ -64,8 +64,8 @@ async def connect(connection: Connection):
                                     "adjustedTimeLeftInPhase"]) / 1000 - current
                                 logger.info("Detected pick turn. Sleeping " + str(remaining - 1))
                                 time.sleep(remaining - 1)
-                                lock_in = await connection.request("post", "/lol-champ-select/v1/session/actions/" + str(
-                                    event_id) + "/complete")
+                                lock_in = await connection.request("post", "/lol-champ-select/v1/session/actions/" +
+                                                                   str(event_id) + "/complete")
                                 lock_in_info = await lock_in.json()
                                 logger.debug(lock_in_info)
                                 logger.info("Locked in.")
@@ -74,7 +74,7 @@ async def connect(connection: Connection):
 
 
 @connector.close
-async def disconnect(connection):
+async def disconnect(_):
     logger.info("Disconnected from League, exiting...")
 
 
@@ -83,12 +83,12 @@ def main():
     parser.add_argument("--debug", help="Enable debug log", action="store_true")
     args = parser.parse_args()
     logger.setLevel("DEBUG")
-    with open("example.log", "a+") as file:
+    with open("logfile.log", "a+") as file:
         file.write("\n\n\n\n" + str(time.asctime()) + "\n")
     if args.debug:
-        logging.basicConfig(filename='example.log', level=logging.DEBUG)
+        logging.basicConfig(filename='logfile.log', level=logging.DEBUG)
     else:
-        logging.basicConfig(filename='example.log', level=logging.INFO)
+        logging.basicConfig(filename='logfile.log', level=logging.INFO)
     ch = logging.StreamHandler()
     ch.setLevel(logging.INFO)
     logger.addHandler(ch)
